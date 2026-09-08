@@ -1,0 +1,303 @@
+
+:root {
+  --color-primary: #181615;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #1d1b1a;
+  --color-on-primary-container: #878381;
+  --color-primary-fixed: #e7e1df;
+  --color-primary-fixed-dim: #cbc5c3;
+  --color-on-primary-fixed: #1d1b1a;
+  --color-on-primary-fixed-variant: #494645;
+  --color-inverse-primary: #cbc5c3;
+  --color-secondary: #775a19;
+  --color-on-secondary: #ffffff;
+  --color-secondary-gold: #C5A059;
+  --color-secondary-container: #fed488;
+  --color-on-secondary-container: #785a1a;
+  --color-secondary-fixed: #ffdea5;
+  --color-secondary-fixed-dim: #e9c176;
+  --color-on-secondary-fixed: #261900;
+  --color-on-secondary-fixed-variant: #5d4201;
+  --color-tertiary: #000000;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #1c1c17;
+  --color-on-tertiary-container: #86847d;
+  --color-tertiary-fixed: #e6e2da;
+  --color-tertiary-fixed-dim: #c9c6bf;
+  --color-on-tertiary-fixed: #1c1c17;
+  --color-on-tertiary-fixed-variant: #484741;
+  --color-surface: #f9f9f9;
+  --color-on-surface: #1a1c1c;
+  --color-surface-variant: #e2e2e2;
+  --color-on-surface-variant: #4d4541;
+  --color-surface-dim: #dadada;
+  --color-surface-bright: #f9f9f9;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f3f3f3;
+  --color-surface-container: #eeeeee;
+  --color-surface-container-high: #e8e8e8;
+  --color-surface-container-highest: #e2e2e2;
+  --color-inverse-surface: #2f3131;
+  --color-inverse-on-surface: #f0f1f1;
+  --color-surface-tint: #615e5c;
+  --color-outline: #7f7570;
+  --color-outline-variant: #d0c4be;
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+  --color-background: #f9f9f9;
+  --color-on-background: #1a1c1c;
+  --color-buttercream: #FAF6EE;
+  --color-buttercream-light: #FDFBF7;
+  --color-accent-glow: #FEF9E7;
+}
+
+html.dark {
+  --color-primary: #e8e4e0;
+  --color-on-primary: #181615;
+  --color-primary-container: #2f2c2a;
+  --color-on-primary-container: #d6d1cf;
+  
+  --color-secondary: #fed488;
+  --color-on-secondary: #4a360a;
+  
+  --color-tertiary: #ffffff;
+  --color-on-tertiary: #000000;
+
+  --color-surface: #0c0b0a;
+  --color-surface-dim: #141210;
+  --color-surface-container-lowest: #000000;
+  --color-surface-container-low: #111010;
+  --color-surface-container: #1a1816;
+  --color-surface-container-high: #242120;
+  --color-surface-container-highest: #2f2c2a;
+  --color-on-surface: #f4f0ec;
+  --color-on-surface-variant: #d0c8c0;
+  --color-outline: #a09890;
+  --color-outline-variant: #7c746e;
+  --color-background: #0c0b0a;
+  --color-on-background: #f4f0ec;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  body {
+    background-color: #f9f9f9;
+    color: #1a1c1c;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Dark mode base overrides */
+  html.dark body {
+    background-color: #0c0b0a;
+    color: #e8e4e0;
+  }
+
+  h1, h2, h3, h4, .font-editorial {
+    font-family: 'DM Serif Display', Georgia, serif;
+  }
+
+  /* Material Symbols Font Variations */
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 350, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle;
+  }
+
+  .material-symbols-filled,
+  .material-symbols-outlined.fill-1 {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24 !important;
+  }
+}
+
+/* Custom Scrollbars — Light */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f3f3f3;
+}
+::-webkit-scrollbar-thumb {
+  background: #d0c4be;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #C5A059;
+}
+
+/* Custom Scrollbars — Dark */
+html.dark ::-webkit-scrollbar-track {
+  background: #1a1816;
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: #3d3632;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #C5A059;
+}
+
+/* Hide scrollbar for clean horizontal scrolls */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Glassy Select Drop-downs */
+select {
+  background-color: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(16px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
+  border: 1px solid rgba(197, 160, 89, 0.3) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+  transition: all 0.2s ease-in-out !important;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23C5A059' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E") !important;
+  background-position: right 0.5rem center !important;
+  background-repeat: no-repeat !important;
+  background-size: 1.5em 1.5em !important;
+  padding-right: 2.5rem !important;
+}
+
+select:hover {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  border-color: rgba(197, 160, 89, 0.6) !important;
+}
+
+select:focus {
+  outline: none !important;
+  border-color: #C5A059 !important;
+  box-shadow: 0 0 0 2px rgba(197, 160, 89, 0.2) !important;
+}
+
+html.dark select {
+  background-color: rgba(24, 22, 21, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark select:hover {
+  background-color: rgba(30, 28, 27, 0.8) !important;
+  border-color: rgba(197, 160, 89, 0.4) !important;
+}
+
+/* Ensure dropdown options are solid for readability */
+select option {
+  background-color: #ffffff !important;
+  color: #1a1c1c !important;
+}
+
+html.dark select option {
+  background-color: #111010 !important;
+  color: #e8e4e0 !important;
+}
+
+/* Glassmorphism Classes — Light */
+.glass-panel {
+  background: rgba(253, 251, 247, 0.9);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+}
+
+.glass-nav {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.glass-dark {
+  background: rgba(24, 22, 21, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Glassmorphism — Dark Mode */
+html.dark .glass-panel {
+  background: rgba(20, 18, 16, 0.9);
+}
+html.dark .glass-nav {
+  background: rgba(18, 16, 14, 0.94);
+}
+
+.gold-hairline {
+  border-color: rgba(197, 160, 89, 0.35);
+}
+
+.gold-glow {
+  box-shadow: 0 0 25px -5px rgba(197, 160, 89, 0.25);
+}
+
+/* Luxury button transitions — Light */
+.btn-gold-luxury {
+  background-color: #181615;
+  color: #ffffff;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid transparent;
+}
+.btn-gold-luxury:hover {
+  background-color: #2B2625;
+  border-color: #C5A059;
+  box-shadow: 0 8px 24px -4px rgba(197, 160, 89, 0.25);
+}
+
+/* Luxury button — Dark Mode */
+html.dark .btn-gold-luxury {
+  background-color: #C5A059;
+  color: #0c0b0a;
+}
+html.dark .btn-gold-luxury:hover {
+  background-color: #d4b06a;
+  border-color: #C5A059;
+  box-shadow: 0 8px 24px -4px rgba(197, 160, 89, 0.35);
+}
+
+/* Subtle image zoom */
+.img-zoom {
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.group:hover .img-zoom {
+  transform: scale(1.05);
+}
+
+/* Gold Shimmer keyframes */
+@keyframes gold-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-gold-shimmer {
+  background: linear-gradient(90deg, rgba(197, 160, 89, 0) 0%, rgba(255, 222, 165, 0.4) 50%, rgba(197, 160, 89, 0) 100%);
+  background-size: 200% 100%;
+  animation: gold-shimmer 3s infinite;
+}
+
+/* Admin sidebar responsive transitions */
+.admin-sidebar {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (max-width: 1023px) {
+  .admin-sidebar-hidden {
+    transform: translateX(-100%);
+  }
+}
+
+/* Responsive admin content area */
+.admin-content {
+  transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}

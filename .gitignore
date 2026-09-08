@@ -1,0 +1,9 @@
+node_modules
+.env
+server/macqrosa.db
+server/macqrosa.db-journal
+logs/
+debug.css
+*.py
+test_*.js
+implementation_plan.md
