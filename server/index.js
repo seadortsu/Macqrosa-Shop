@@ -202,13 +202,10 @@ app.use((err, req, res, _next) => {
    START SERVER
    ========================================================================= */
 
-// Only call listen() when running directly (not under Passenger).
-// Passenger sets its own port and manages the HTTP listener.
-if (!process.env.PASSENGER_APP_ENV) {
-  app.listen(PORT, () => {
-    logger.info(`✨ Macqrosa API Server running on http://localhost:${PORT}`);
-  });
-}
+// Start server (Phusion Passenger hooks into listen(), and standalone uses PORT)
+app.listen(PORT, () => {
+  logger.info(`✨ Macqrosa API Server running on http://localhost:${PORT}`);
+});
 
 // Export app for Passenger entry point (app.js)
 export default app;
