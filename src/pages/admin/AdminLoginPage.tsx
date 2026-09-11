@@ -26,13 +26,11 @@ export const AdminLoginPage: React.FC = () => {
     setLoading(false);
   };
 
-  const handleFillDemo = () => {
-    setEmail('admin@macqrosa.com');
-    setPassword('admin123');
-  };
+
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center p-4">
+    <div className="min-h-screen bg-cover bg-center relative overflow-hidden flex items-center justify-center p-4" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=2000')" }}>
+      <div className="absolute inset-0 bg-background/85 backdrop-blur-sm"></div>
       {/* Ambient background light orbs */}
       <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-secondary-gold/10 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-40 -right-40 w-96 h-96 rounded-full bg-secondary/15 blur-3xl pointer-events-none" />
@@ -40,16 +38,9 @@ export const AdminLoginPage: React.FC = () => {
       <div className="relative z-10 bg-surface-container-low/95 backdrop-blur-2xl border border-secondary-gold/30 rounded-2xl p-8 sm:p-12 w-full max-w-md shadow-2xl space-y-6">
         <div className="text-center">
           <BrandLogo size="md" className="justify-center mb-4 invert" />
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-gold/15 text-secondary-fixed text-[10px] uppercase tracking-widest font-semibold mb-2 border border-secondary-gold/30">
-            <span className="material-symbols-outlined text-[14px]">shield_person</span>
-            <span>Place Vendôme Staff &amp; Executive Portal</span>
-          </div>
-          <h1 className="font-serif text-2xl text-primary font-normal tracking-wide">
-            MACQROSA Console
+          <h1 className="font-serif text-2xl text-primary font-normal tracking-wide mb-6">
+            Management Console
           </h1>
-          <p className="text-xs text-on-surface-variant font-light mt-1">
-            Restricted to authorized atelier inventory, order, and salon operators.
-          </p>
         </div>
 
         {error && (
@@ -62,7 +53,7 @@ export const AdminLoginPage: React.FC = () => {
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-[10px] uppercase tracking-wider text-on-surface-variant mb-1.5 font-semibold">
-              Administrator Email
+              Email / Username
             </label>
             <input
               type="email"
@@ -93,18 +84,11 @@ export const AdminLoginPage: React.FC = () => {
             disabled={loading}
             className="w-full bg-secondary-gold hover:bg-white text-primary py-3.5 rounded-lg text-xs uppercase tracking-[0.2em] font-semibold transition-all duration-300 shadow-gold-md hover:shadow-gold-lg mt-2"
           >
-            {loading ? 'Verifying Credentials...' : 'Authenticate & Enter Console'}
+            {loading ? 'Verifying Credentials...' : 'Access Console'}
           </button>
         </form>
 
         <div className="pt-4 border-t border-white/10 flex flex-col items-center gap-3 text-xs">
-          <button
-            type="button"
-            onClick={handleFillDemo}
-            className="text-secondary-fixed hover:text-primary font-medium hover:underline text-[11px] transition-colors"
-          >
-            Fill Demo Credentials (admin@macqrosa.com)
-          </button>
 
           <a href="/" className="text-on-surface-variant hover:text-primary text-[11px] transition-colors flex items-center gap-1">
             <span>←</span>

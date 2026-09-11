@@ -51,6 +51,22 @@ export interface HomepageCms {
   services: ServiceItem[];
 }
 
+export interface StorepageCms {
+  topBadge: string;
+  title: string;
+  description: string;
+  promotionalText: string;
+  bannerImage: string;
+}
+
+export interface ProductpageCms {
+  trustBadgeText: string;
+  shippingText: string;
+  guaranteeText: string;
+  returnPolicyText: string;
+  highlightColor: string;
+}
+
 export interface ThemeConfig {
   preset: string;
   primaryColor: string;
@@ -61,6 +77,10 @@ export interface ThemeConfig {
   announcementText: string;
   fontHeading: string;
   fontBody: string;
+  darkPrimaryColor: string;
+  darkSecondaryColor: string;
+  darkBackgroundColor: string;
+  darkTextColor: string;
 }
 
 export interface FooterConfig {
@@ -131,6 +151,10 @@ interface StoreSettingsContextType {
   systemAlerts: SystemAlert;
   adminWorkspace: AdminWorkspace;
   gatewaysConfig: GatewaySettings;
+  storepageCms: StorepageCms;
+  productpageCms: ProductpageCms;
+  menus: any;
+  pages: any[];
   isLoading: boolean;
   refreshSettings: () => Promise<void>;
   updateThemeColors: (primary: string, secondary: string) => void;
@@ -186,6 +210,22 @@ const defaultHomepageCms: HomepageCms = {
   ]
 };
 
+const defaultStorepageCms: StorepageCms = {
+  topBadge: 'The Catalog • Haute Parfumerie & Cosmétiques',
+  title: 'Curated Formulations',
+  description: 'Explore our master-crafted collection of skin-whispered radiance and ancient botanical alchemy.',
+  promotionalText: 'Complimentary shipping on orders over $150.',
+  bannerImage: ''
+};
+
+const defaultProductpageCms: ProductpageCms = {
+  trustBadgeText: 'Certified Authentic by Place Vendôme',
+  shippingText: 'Ships in 1-2 business days with climate-controlled transit.',
+  guaranteeText: '30-Day Elegance Guarantee',
+  returnPolicyText: 'Complimentary returns via White Glove Courier.',
+  highlightColor: '#C5A059'
+};
+
 const defaultThemeConfig: ThemeConfig = {
   preset: 'champagne_gold',
   primaryColor: '#181615',
@@ -195,7 +235,11 @@ const defaultThemeConfig: ThemeConfig = {
   bannerText: '#FFFFFF',
   announcementText: 'Free shipping on orders over $150 — Complimentary Place Vendôme Gift Packaging',
   fontHeading: 'Bodoni Moda',
-  fontBody: 'Hanken Grotesk'
+  fontBody: 'Hanken Grotesk',
+  darkPrimaryColor: '#FFFFFF',
+  darkSecondaryColor: '#D4AF37',
+  darkBackgroundColor: '#121212',
+  darkTextColor: '#E0E0E0'
 };
 
 const defaultFooterConfig: FooterConfig = {
@@ -268,7 +312,31 @@ export const StoreSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   const [systemAlerts, setSystemAlerts] = useState<SystemAlert>(defaultSystemAlerts);
   const [adminWorkspace, setAdminWorkspace] = useState<AdminWorkspace>(defaultAdminWorkspace);
   const [gatewaysConfig, setGatewaysConfig] = useState<GatewaySettings>(defaultGatewaySettings);
+  const [storepageCms, setStorepageCms] = useState<StorepageCms>(defaultStorepageCms);
+  const [productpageCms, setProductpageCms] = useState<ProductpageCms>(defaultProductpageCms);
+  const [menus, setMenus] = useState<any>({});
+  const [pages, setPages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Live Preview Support via postMessage
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // In production, verify event.origin here
+      const { type, payload } = event.data;
+      if (type === 'LIVE_PREVIEW_UPDATE') {
+        const { section, data } = payload;
+        if (section === 'homepage_cms') setHomepageCms(prev => ({ ...prev, ...data }));
+        if (section === 'storepage_cms') setStorepageCms(prev => ({ ...prev, ...data }));
+        if (section === 'productpage_cms') setProductpageCms(prev => ({ ...prev, ...data }));
+        if (section === 'theme_config') {
+          setThemeConfig(prev => ({ ...prev, ...data }));
+          applyThemeColors(data.primaryColor, data.secondaryColor);
+        }
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   const applyThemeColors = useCallback((primary: string, secondary: string) => {
     if (typeof document !== 'undefined') {
@@ -280,14 +348,25 @@ export const StoreSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const refreshSettings = useCallback(async () => {
     try {
-      const res = await fetch('/api/settings');
-      if (res.ok) {
-        const data = await res.json();
+      const [settingsRes, menusRes, pagesRes] = await Promise.allSettled([
+        fetch('/api/settings'),
+        fetch('/api/menus'),
+        fetch('/api/pages')
+      ]);
+
+      if (settingsRes.status === 'fulfilled' && settingsRes.value.ok) {
+        const data = await settingsRes.value.json();
         if (data.storeSettings && Object.keys(data.storeSettings).length > 0) {
           setStoreSettings(prev => ({ ...prev, ...data.storeSettings }));
         }
         if (data.homepageCms && Object.keys(data.homepageCms).length > 0) {
           setHomepageCms(prev => ({ ...prev, ...data.homepageCms }));
+        }
+        if (data.storepageCms && Object.keys(data.storepageCms).length > 0) {
+          setStorepageCms(prev => ({ ...prev, ...data.storepageCms }));
+        }
+        if (data.productpageCms && Object.keys(data.productpageCms).length > 0) {
+          setProductpageCms(prev => ({ ...prev, ...data.productpageCms }));
         }
         if (data.themeConfig && Object.keys(data.themeConfig).length > 0) {
           setThemeConfig(prev => ({ ...prev, ...data.themeConfig }));
@@ -306,6 +385,23 @@ export const StoreSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
           setGatewaysConfig(prev => ({ ...prev, ...data.gatewaysConfig }));
         }
       }
+
+      if (menusRes.status === 'fulfilled' && menusRes.value.ok) {
+        const menusList = await menusRes.value.json();
+        const menusObj: any = {};
+        for (const m of menusList) {
+           const mDetailsRes = await fetch(`/api/menus/${m.handle}`);
+           if (mDetailsRes.ok) {
+             menusObj[m.handle] = await mDetailsRes.json();
+           }
+        }
+        setMenus(menusObj);
+      }
+
+      if (pagesRes.status === 'fulfilled' && pagesRes.value.ok) {
+        setPages(await pagesRes.value.json());
+      }
+
     } catch (err) {
       console.warn('Could not fetch store settings, using defaults:', err);
     } finally {
@@ -332,6 +428,10 @@ export const StoreSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
         systemAlerts,
         adminWorkspace,
         gatewaysConfig,
+        storepageCms,
+        productpageCms,
+        menus,
+        pages,
         isLoading,
         refreshSettings,
         updateThemeColors

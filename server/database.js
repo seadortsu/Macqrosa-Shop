@@ -1,58 +1,97 @@
-import Database from 'better-sqlite3';
+import pg from 'pg';
 import bcrypt from 'bcryptjs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+const { Pool } = pg;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Resolve DB path relative to this file so it works under cPanel Passenger
-const dbPath = path.join(__dirname, 'macqrosa.db');
-const db = new Database(dbPath);
+// Configure database connection: PostgreSQL (Supabase) if DATABASE_URL is set, else SQLite fallback
+let pgPool = null;
+let sqliteDb = null;
 
-
+if (process.env.DATABASE_URL) {
+  pgPool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+      rejectUnauthorized: false
+    }
+  });
+} else {
+  try {
+    const Database = (await import('better-sqlite3')).default;
+    const dbPath = path.join(__dirname, 'macqrosa.db');
+    sqliteDb = new Database(dbPath);
+  } catch (err) {
+    console.warn('SQLite fallback unavailable:', err.message);
+  }
+}
 
 /**
  * Helper: run a query through the shared pool.
  * Convenience wrapper so route files can do:
  *   const { rows } = await query('SELECT ...', [param])
  */
-export function query(text, params = []) {
-  return new Promise((resolve, reject) => {
-    try {
-      const sqliteText = text.replace(/\$\d+/g, '?');
-      const stmt = db.prepare(sqliteText);
-      const isSelect = sqliteText.trim().toUpperCase().startsWith('SELECT');
-      const isReturning = sqliteText.toUpperCase().includes('RETURNING');
-      
-      if (isSelect || isReturning) {
-        const rows = stmt.all(...params);
-        resolve({ rows });
-      } else {
-        const result = stmt.run(...params);
-        resolve({ rowCount: result.changes });
-      }
-    } catch (err) {
-      reject(err);
+export async function query(text, params = []) {
+  if (pgPool) {
+    const result = await pgPool.query(text, params);
+    return { rows: result.rows, rowCount: result.rowCount };
+  }
+
+  if (sqliteDb) {
+    const sqliteText = text.replace(/\$\d+/g, '?');
+    const stmt = sqliteDb.prepare(sqliteText);
+    const isSelect = sqliteText.trim().toUpperCase().startsWith('SELECT');
+    const isReturning = sqliteText.toUpperCase().includes('RETURNING');
+    
+    if (isSelect || isReturning) {
+      const rows = stmt.all(...params);
+      return { rows };
+    } else {
+      const result = stmt.run(...params);
+      return { rowCount: result.changes };
     }
-  });
+  }
+
+  throw new Error('Database not connected. Please set DATABASE_URL.');
 }
 
 export const pool = {
-  connect: async () => ({
-    query: query,
-    release: () => {}
-  })
+  connect: async () => {
+    if (pgPool) {
+      return await pgPool.connect();
+    }
+    return {
+      query: query,
+      release: () => {}
+    };
+  }
 };
 
 /* =========================================================================
-   DATABASE INITIALIZATION — PostgreSQL
+   DATABASE INITIALIZATION
    ========================================================================= */
 
 export async function initDatabase() {
+  if (pgPool) {
+    try {
+      const res = await pgPool.query('SELECT 1 as test');
+      return;
+    } catch (err) {
+      console.error('Error connecting to Supabase PostgreSQL database:', err);
+      throw err;
+    }
+  }
+
+  if (!sqliteDb) {
+    console.warn('Skipping SQLite init: No database engine active.');
+    return;
+  }
+
   try {
-    // Create tables (PostgreSQL syntax)
-    db.exec(`
+    // Create tables (SQLite fallback)
+    sqliteDb.exec(`
       CREATE TABLE IF NOT EXISTS categories (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -104,6 +143,8 @@ export async function initDatabase() {
         points INTEGER DEFAULT 450,
         total_spent NUMERIC(10,2) DEFAULT 0,
         orders_count INTEGER DEFAULT 0,
+        reset_token TEXT,
+        reset_token_expires DATETIME,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
 
@@ -235,7 +276,62 @@ export async function initDatabase() {
         status TEXT DEFAULT 'sent',
         sent_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
+
+      CREATE TABLE IF NOT EXISTS media (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        file_name TEXT NOT NULL,
+        file_path TEXT NOT NULL,
+        mime_type TEXT NOT NULL,
+        size INTEGER NOT NULL,
+        alt_text TEXT,
+        uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS menus (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        handle TEXT UNIQUE NOT NULL,
+        location TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS menu_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        menu_id INTEGER NOT NULL REFERENCES menus(id) ON DELETE CASCADE,
+        parent_id INTEGER REFERENCES menu_items(id) ON DELETE CASCADE,
+        label TEXT NOT NULL,
+        url TEXT,
+        target TEXT DEFAULT '_self',
+        order_index INTEGER DEFAULT 0,
+        show_desktop INTEGER DEFAULT 1,
+        show_tablet INTEGER DEFAULT 1,
+        show_mobile INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS pages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        slug TEXT UNIQUE NOT NULL,
+        content_blocks TEXT,
+        meta_title TEXT,
+        meta_description TEXT,
+        status TEXT DEFAULT 'published',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
     `);
+
+    // Apply migrations for existing tables safely
+    try {
+      sqliteDb.exec("ALTER TABLE menus ADD COLUMN location TEXT;");
+    } catch(e) { /* Column likely exists */ }
+    
+    try {
+      sqliteDb.exec("ALTER TABLE menu_items ADD COLUMN show_desktop INTEGER DEFAULT 1;");
+      sqliteDb.exec("ALTER TABLE menu_items ADD COLUMN show_tablet INTEGER DEFAULT 1;");
+      sqliteDb.exec("ALTER TABLE menu_items ADD COLUMN show_mobile INTEGER DEFAULT 1;");
+    } catch(e) { /* Columns likely exist */ }
 
     // Seed initial data if tables are empty
     await seedInitialData();
@@ -254,19 +350,19 @@ async function seedInitialData() {
   const { rows: adminRows } = await query('SELECT count(*) as count FROM admins');
   if (parseInt(adminRows[0].count) === 0) {
     const salt = bcrypt.genSaltSync(10);
-    const adminHash = bcrypt.hashSync('admin123', salt);
+    const adminHash = bcrypt.hashSync('Master123!', salt);
 
     await query(`
       INSERT INTO admins (email, password_hash, name, role, created_at)
       VALUES ($1, $2, $3, $4, $5)
     `, ['admin@macqrosa.com', adminHash, 'Claire Sinclair', 'super_admin', new Date().toISOString()]);
 
-    const customerHash = bcrypt.hashSync('customer123', salt);
+    const customerHash = bcrypt.hashSync('Client123!', salt);
     const custRes = await query(`
       INSERT INTO customers (email, password_hash, first_name, last_name, phone, tier, points, total_spent, orders_count, created_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING id
-    `, ['claire@vendome.com', customerHash, 'Claire', 'Sinclair', '+1 (555) 839-2910', 'Circle Privé Member', 1250, 945.00, 3, new Date(Date.now() - 30 * 86400000).toISOString()]);
+    `, ['demo@macqrosa.com', customerHash, 'Claire', 'Sinclair', '+1 (555) 839-2910', 'Circle Privé Member', 1250, 945.00, 3, new Date(Date.now() - 30 * 86400000).toISOString()]);
 
     const customerId = custRes.rows[0].id;
     await query(`

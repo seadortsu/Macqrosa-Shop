@@ -27,18 +27,47 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen = true, onTog
     navigate('/admin/login');
   };
 
-  const navItems = [
-    { label: 'Analytics', path: '/admin', icon: 'insights', end: true },
-    { label: 'Orders', path: '/admin/orders', icon: 'receipt_long' },
-    { label: 'Products', path: '/admin/products', icon: 'inventory_2' },
-    { label: 'Categories', path: '/admin/categories', icon: 'category' },
-    { label: 'Inventory', path: '/admin/inventory', icon: 'warehouse' },
-    { label: 'Customers', path: '/admin/customers', icon: 'group' },
-    { label: 'Notifications', path: '/admin/notifications', icon: 'campaign' },
+  const navGroups = [
+    {
+      title: 'Store Management',
+      items: [
+        { label: 'Analytics', path: '/admin', icon: 'insights', end: true },
+        { label: 'Orders', path: '/admin/orders', icon: 'receipt_long' },
+        { label: 'Products', path: '/admin/products', icon: 'inventory_2' },
+        { label: 'Categories', path: '/admin/categories', icon: 'category' },
+        { label: 'Inventory', path: '/admin/inventory', icon: 'warehouse' },
+        { label: 'Customers', path: '/admin/customers', icon: 'group' },
+      ]
+    },
+    {
+      title: 'Content & Design',
+      items: [
+        { label: 'Media Library', path: '/admin/media', icon: 'perm_media' },
+        { label: 'Pages', path: '/admin/pages', icon: 'article' },
+        { label: 'Menus', path: '/admin/menus', icon: 'menu' },
+        { label: 'Store Design', path: '/admin/design', icon: 'palette' },
+      ]
+    },
+    {
+      title: 'Operations',
+      items: [
+        { label: 'Team Management', path: '/admin/team', icon: 'badge' },
+        { label: 'Gateways', path: '/admin/gateways', icon: 'hub' },
+        { label: 'Notifications', path: '/admin/notifications', icon: 'campaign' },
+      ]
+    }
   ];
 
+  const visibleNavGroups = navGroups.filter(group => {
+    if (admin?.role === 'super_admin') return true;
+    if (admin?.role === 'store_manager') {
+      return group.title === 'Store Management';
+    }
+    return false; // other roles don't see anything by default unless explicitly allowed
+  });
+
   const bottomNavItems = [
-    { label: 'System Configurations', path: '/admin/settings', icon: 'settings' }
+    { label: 'System Settings', path: '/admin/settings', icon: 'settings' }
   ];
 
   return (
@@ -95,26 +124,35 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen = true, onTog
 
         {/* Navigation */}
         <div className="flex-1 overflow-y-auto px-3 py-2">
-          <div className="px-3 mb-2 mt-1">
-          </div>
-          <nav className="flex flex-col gap-0.5">
-            {navItems.map(item => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                end={item.end}
-                onClick={() => isMobile && onToggle?.()}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-150 ${
-                    isActive
-                      ? 'bg-primary text-white shadow-sm'
-                      : 'text-on-surface-variant dark:text-dark-on-surface-variant hover:bg-surface-container-low dark:hover:bg-dark-surface-container hover:text-on-surface dark:hover:text-dark-on-surface'
-                  }`
-                }
-              >
-                <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
-                <span>{item.label}</span>
-              </NavLink>
+          <nav className="flex flex-col gap-4">
+            {visibleNavGroups.map(group => (
+              <div key={group.title}>
+                <div className="px-3 mb-1">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                    {group.title}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  {group.items.map(item => (
+                    <NavLink
+                      key={item.path}
+                      to={item.path}
+                      end={item.end}
+                      onClick={() => isMobile && onToggle?.()}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-150 ${
+                          isActive
+                            ? 'bg-primary text-white shadow-sm'
+                            : 'text-on-surface-variant dark:text-dark-on-surface-variant hover:bg-surface-container-low dark:hover:bg-dark-surface-container hover:text-on-surface dark:hover:text-dark-on-surface'
+                        }`
+                      }
+                    >
+                      <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </NavLink>
+                  ))}
+                </div>
+              </div>
             ))}
           </nav>
 

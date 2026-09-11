@@ -11,6 +11,7 @@ import { StorefrontHeader } from './components/common/StorefrontHeader';
 import { StorefrontFooter } from './components/common/StorefrontFooter';
 import { CartDrawer } from './components/common/CartDrawer';
 import { BackToTop } from './components/common/BackToTop';
+import { useStoreSettings } from './context/StoreSettingsContext';
 
 // Storefront Pages
 import { HomePage } from './pages/storefront/HomePage';
@@ -21,6 +22,7 @@ import { CheckoutPage } from './pages/storefront/CheckoutPage';
 import { OrderConfirmationPage } from './pages/storefront/OrderConfirmationPage';
 import { AccountPage } from './pages/storefront/AccountPage';
 import { CustomerAuthPage } from './pages/storefront/CustomerAuthPage';
+import { CustomerResetPasswordPage } from './pages/storefront/CustomerResetPasswordPage';
 
 // Admin Pages
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
@@ -32,6 +34,12 @@ import { AdminCustomersPage } from './pages/admin/AdminCustomersPage';
 import { AdminCategoriesPage } from './pages/admin/AdminCategoriesPage';
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 import { AdminNotificationsPage } from './pages/admin/AdminNotificationsPage';
+import { AdminMediaLibraryPage } from './pages/admin/AdminMediaLibraryPage';
+import { AdminMenuBuilderPage } from './pages/admin/AdminMenuBuilderPage';
+import { AdminPagesBuilderPage } from './pages/admin/AdminPagesBuilderPage';
+import { AdminStoreDesignPage } from './pages/admin/AdminStoreDesignPage';
+import { AdminTeamPage } from './pages/admin/AdminTeamPage';
+import { AdminGatewaysPage } from './pages/admin/AdminGatewaysPage';
 
 // Storefront Layout Wrapper
 const StorefrontLayout: React.FC = () => {
@@ -49,7 +57,7 @@ const StorefrontLayout: React.FC = () => {
 };
 
 // Admin Protected Route Guard
-const ProtectedAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const ProtectedAdminRoute: React.FC<{ children: React.ReactNode, requireSuperAdmin?: boolean }> = ({ children, requireSuperAdmin }) => {
   const { admin, adminToken, isAdminLoading } = useAuth();
 
   if (isAdminLoading) {
@@ -64,6 +72,27 @@ const ProtectedAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children
     return <Navigate to="/admin/login" replace />;
   }
 
+  if (requireSuperAdmin && admin.role !== 'super_admin') {
+    return <Navigate to="/admin" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+// Maintenance Mode Gate
+const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { storeSettings } = useStoreSettings();
+  
+  if (storeSettings?.maintenanceMode) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-surface dark:bg-dark-surface text-on-surface p-8 text-center transition-colors duration-300">
+        <h1 className="text-3xl font-serif mb-4 text-primary dark:text-dark-primary">Store Under Maintenance</h1>
+        <p className="text-lg text-on-surface-variant dark:text-dark-on-surface-variant max-w-md mx-auto">
+          We are currently updating our systems to serve you better. Please check back shortly.
+        </p>
+      </div>
+    );
+  }
   return <>{children}</>;
 };
 
@@ -76,7 +105,7 @@ export const App: React.FC = () => {
           <BrowserRouter>
           <Routes>
             {/* Storefront Routes */}
-            <Route element={<StorefrontLayout />}>
+            <Route element={<MaintenanceGate><StorefrontLayout /></MaintenanceGate>}>
               <Route path="/" element={<HomePage />} />
               <Route path="/catalog" element={<CatalogPage />} />
               <Route path="/product/:idOrSlug" element={<ProductDetailPage />} />
@@ -85,8 +114,11 @@ export const App: React.FC = () => {
               <Route path="/order-confirmation/:orderNumber" element={<OrderConfirmationPage />} />
               <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
               <Route path="/account" element={<AccountPage />} />
-              <Route path="/auth" element={<CustomerAuthPage />} />
             </Route>
+
+            {/* Independent Storefront Routes */}
+            <Route path="/auth" element={<CustomerAuthPage />} />
+            <Route path="/reset-password" element={<CustomerResetPasswordPage />} />
 
             {/* Admin Authentication Portal */}
             <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -151,7 +183,7 @@ export const App: React.FC = () => {
             <Route
               path="/admin/notifications"
               element={
-                <ProtectedAdminRoute>
+                <ProtectedAdminRoute requireSuperAdmin>
                   <AdminNotificationsPage />
                 </ProtectedAdminRoute>
               }
@@ -161,6 +193,54 @@ export const App: React.FC = () => {
               element={
                 <ProtectedAdminRoute>
                   <AdminSettingsPage />
+                </ProtectedAdminRoute>
+              }
+            />
+            <Route
+              path="/admin/media"
+              element={
+                <ProtectedAdminRoute requireSuperAdmin>
+                  <AdminMediaLibraryPage />
+                </ProtectedAdminRoute>
+              }
+            />
+            <Route
+              path="/admin/menus"
+              element={
+                <ProtectedAdminRoute requireSuperAdmin>
+                  <AdminMenuBuilderPage />
+                </ProtectedAdminRoute>
+              }
+            />
+            <Route
+              path="/admin/pages"
+              element={
+                <ProtectedAdminRoute requireSuperAdmin>
+                  <AdminPagesBuilderPage />
+                </ProtectedAdminRoute>
+              }
+            />
+            <Route
+              path="/admin/design"
+              element={
+                <ProtectedAdminRoute requireSuperAdmin>
+                  <AdminStoreDesignPage />
+                </ProtectedAdminRoute>
+              }
+            />
+            <Route
+              path="/admin/team"
+              element={
+                <ProtectedAdminRoute requireSuperAdmin>
+                  <AdminTeamPage />
+                </ProtectedAdminRoute>
+              }
+            />
+            <Route
+              path="/admin/gateways"
+              element={
+                <ProtectedAdminRoute requireSuperAdmin>
+                  <AdminGatewaysPage />
                 </ProtectedAdminRoute>
               }
             />

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { query } from '../database.js';
@@ -8,6 +9,7 @@ import {
   JWT_SECRET_CUSTOMER,
   JWT_SECRET_ADMIN
 } from '../middleware/auth.js';
+import { sendPasswordResetEmail } from '../services/email.js';
 
 const router = Router();
 
@@ -157,6 +159,58 @@ router.get('/customer/me', authenticateCustomer, async (req, res) => {
   } catch (err) {
     console.error('Customer me error:', err);
     res.status(500).json({ error: 'Failed to retrieve profile' });
+  }
+});
+
+// Forgot Password
+router.post('/customer/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+    
+    const { rows } = await query('SELECT id, email FROM customers WHERE email = $1', [email.toLowerCase().trim()]);
+    if (rows.length === 0) {
+      // Return 200 to prevent email enumeration
+      return res.json({ message: 'If an account exists, a reset link will be sent.' });
+    }
+    
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 3600000).toISOString(); // 1 hour
+    
+    await query('UPDATE customers SET reset_token = $1, reset_token_expires = $2 WHERE id = $3', [token, expires, rows[0].id]);
+    await sendPasswordResetEmail(rows[0].email, token);
+    
+    res.json({ message: 'If an account exists, a reset link will be sent.' });
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    res.status(500).json({ error: 'Failed to process forgot password request' });
+  }
+});
+
+// Reset Password
+router.post('/customer/reset-password', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) {
+      return res.status(400).json({ error: 'Token and new password are required' });
+    }
+    
+    const { rows } = await query('SELECT id FROM customers WHERE reset_token = $1 AND reset_token_expires > $2', [token, new Date().toISOString()]);
+    if (rows.length === 0) {
+      return res.status(400).json({ error: 'Invalid or expired reset token' });
+    }
+    
+    const salt = bcrypt.genSaltSync(10);
+    const passwordHash = bcrypt.hashSync(newPassword, salt);
+    
+    await query('UPDATE customers SET password_hash = $1, reset_token = NULL, reset_token_expires = NULL WHERE id = $2', [passwordHash, rows[0].id]);
+    
+    res.json({ message: 'Password has been reset successfully' });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    res.status(500).json({ error: 'Failed to reset password' });
   }
 });
 

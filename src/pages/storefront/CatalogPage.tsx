@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Product } from '../../types';
 import { useCart } from '../../context/CartContext';
+import { useStoreSettings } from '../../context/StoreSettingsContext';
 import { ProductImage } from '../../components/common/ProductImage';
 
 export const CatalogPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { addItem } = useCart();
+  const { storepageCms } = useStoreSettings();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -141,22 +143,32 @@ export const CatalogPage: React.FC = () => {
   return (
     <div className="w-full">
       {/* Editorial Sub-Header Banner */}
-      <section className="w-full bg-surface-container-lowest border-b border-secondary/15 py-12 px-4 sm:px-8">
+      <section 
+        className="w-full bg-surface-container-lowest border-b border-secondary/15 py-12 px-4 sm:px-8 bg-cover bg-center" 
+        style={storepageCms?.bannerImage ? { backgroundImage: `url(${storepageCms.bannerImage})` } : {}}
+      >
         <div className="max-w-[1440px] mx-auto">
           <div className="flex items-center gap-2 mb-2">
             <span className="w-6 h-[1.5px] bg-secondary" />
             <span className="text-[10px] uppercase tracking-[0.24em] text-secondary font-bold">
-              The Catalog • Haute Parfumerie &amp; Cosmétiques
+              {storepageCms?.topBadge || 'The Catalog • Haute Parfumerie & Cosmétiques'}
             </span>
           </div>
-          <h1 className="font-serif text-3xl sm:text-5xl text-primary font-normal tracking-tight">
-            {selectedDiscipline === 'all' ? 'The Complete Atelier Masterpieces' : selectedDiscipline}
+          <h1 className="text-3xl sm:text-5xl font-serif text-primary mb-4 leading-tight">
+            {storepageCms?.title || 'Curated Formulations'}
           </h1>
-          <p className="text-xs sm:text-sm text-on-surface-variant font-light mt-2 max-w-2xl leading-relaxed">
-            Purity-certified French phyto-chemical formulations harmonized with bio-active 24-karat colloidal gold, botanical extracts of Grasse, and alpine polyphenols.
+          <p className="text-sm text-on-surface-variant font-light max-w-lg leading-relaxed">
+            {storepageCms?.description || 'Explore our master-crafted collection of skin-whispered radiance and ancient botanical alchemy.'}
           </p>
         </div>
       </section>
+
+      {/* Promotional Banner */}
+      {storepageCms?.promotionalText && (
+        <div className="w-full bg-secondary-gold text-primary text-center py-2 text-[11px] uppercase tracking-[0.1em] font-semibold">
+          {storepageCms.promotionalText}
+        </div>
+      )}
 
       {/* Refine Criteria & Sort Toolbar */}
       <div className="bg-surface-container-lowest/80 backdrop-blur-md border-b border-surface-container sticky top-28 z-30 py-3.5 px-4 sm:px-8 shadow-xs">

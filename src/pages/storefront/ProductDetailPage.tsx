@@ -4,6 +4,7 @@ import { Product } from '../../types';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { ProductImage } from '../../components/common/ProductImage';
+import { useStoreSettings } from '../../context/StoreSettingsContext';
 
 export const ProductDetailPage: React.FC = () => {
   const { idOrSlug } = useParams<{ idOrSlug: string }>();
@@ -28,6 +29,7 @@ export const ProductDetailPage: React.FC = () => {
 
   const { addItem } = useCart();
   const { customer } = useAuth();
+  const { productpageCms } = useStoreSettings();
 
   const fetchProduct = () => {
     if (!idOrSlug) return;
@@ -169,17 +171,16 @@ export const ProductDetailPage: React.FC = () => {
           {/* Main Stage Image Canvas */}
           <div className="relative flex-1 bg-surface-container-low rounded-xl overflow-hidden group shadow-md border border-secondary/15">
             {/* Award Badge Ribbon */}
-            <div className="absolute top-4 left-4 z-20 flex flex-col gap-1.5 items-start pointer-events-none">
-              <div className="bg-surface-container-lowest/95 backdrop-blur-md px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5 border border-secondary/20">
-                <span className="material-symbols-outlined text-[16px] text-secondary">award_star</span>
-                <span className="text-[10px] uppercase tracking-wider text-on-surface font-semibold">
-                  Harper’s Bazaar Luxury Icons 2024
-                </span>
+            {productpageCms?.trustBadgeText && (
+              <div className="absolute top-4 left-4 z-20 flex flex-col gap-1.5 items-start pointer-events-none">
+                <div className="bg-surface-container-lowest/95 backdrop-blur-md px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5 border border-secondary/20">
+                  <span className="material-symbols-outlined text-[16px]" style={{ color: productpageCms.highlightColor }}>award_star</span>
+                  <span className="text-[10px] uppercase tracking-wider text-on-surface font-semibold">
+                    {productpageCms.trustBadgeText}
+                  </span>
+                </div>
               </div>
-              <span className="bg-secondary-fixed text-on-secondary-fixed text-[9.5px] tracking-widest uppercase px-3 py-0.5 rounded-full font-semibold shadow-xs border border-secondary/20">
-                Winner: Best Miracle Elixir
-              </span>
-            </div>
+            )}
 
             {/* Wishlist Icon */}
             <button
@@ -287,9 +288,11 @@ export const ProductDetailPage: React.FC = () => {
                   </span>
                 )}
               </div>
-              <span className="text-[10px] uppercase tracking-widest text-secondary font-bold bg-secondary-fixed/50 px-2.5 py-1 rounded">
-                Complimentary White Glove Courier
-              </span>
+              {productpageCms?.shippingText && (
+                <span className="text-[10px] uppercase tracking-widest font-bold px-2.5 py-1 rounded" style={{ backgroundColor: `${productpageCms.highlightColor}20`, color: productpageCms.highlightColor }}>
+                  {productpageCms.shippingText}
+                </span>
+              )}
             </div>
             <p className="text-xs text-on-surface-variant flex items-center gap-1 font-light">
               <span>Or 4 interest-free payments of</span>
@@ -495,6 +498,28 @@ export const ProductDetailPage: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* Accordion 4: Guarantee */}
+            {(productpageCms?.guaranteeText || productpageCms?.returnPolicyText) && (
+              <div className="border border-secondary/15 rounded-lg overflow-hidden bg-surface-container-lowest">
+                <button
+                  type="button"
+                  onClick={() => setActiveAccordion(activeAccordion === 'guarantee' ? '' : 'guarantee')}
+                  className="w-full p-4 flex items-center justify-between text-left font-serif text-sm font-medium text-primary hover:text-secondary transition-colors"
+                >
+                  <span>Maison Guarantee</span>
+                  <span className="material-symbols-outlined text-[18px]">
+                    {activeAccordion === 'guarantee' ? 'remove' : 'add'}
+                  </span>
+                </button>
+                {activeAccordion === 'guarantee' && (
+                  <div className="p-4 pt-0 text-xs text-on-surface-variant font-light leading-relaxed border-t border-surface-container/50 space-y-1.5">
+                    {productpageCms.guaranteeText && <p className="font-semibold">{productpageCms.guaranteeText}</p>}
+                    {productpageCms.returnPolicyText && <p>{productpageCms.returnPolicyText}</p>}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

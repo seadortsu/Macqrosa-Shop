@@ -6,12 +6,51 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Resolve log directory relative to the project root (one level up from server/)
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
 const logDir = path.join(__dirname, '..', 'logs');
 
-// Ensure the logs directory exists
-if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir, { recursive: true });
+const transports = [];
+
+if (isServerless) {
+  // In Vercel / serverless runtime, pipe logs to standard console output
+  transports.push(
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+        winston.format.errors({ stack: true }),
+        winston.format.printf(({ level, message, timestamp, ...meta }) => {
+          const metaStr = Object.keys(meta).length > 1 ? ` ${JSON.stringify(meta)}` : '';
+          return `${timestamp} [${level.toUpperCase()}]: ${message}${metaStr}`;
+        })
+      )
+    })
+  );
+} else {
+  // In standalone / local environment, ensure logs directory exists and write log files
+  try {
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir, { recursive: true });
+    }
+    transports.push(
+      new winston.transports.File({ filename: path.join(logDir, 'error.log'), level: 'error', maxsize: 5242880, maxFiles: 5 }),
+      new winston.transports.File({ filename: path.join(logDir, 'combined.log'), maxsize: 5242880, maxFiles: 5 })
+    );
+  } catch (err) {
+    console.warn('Unable to initialize local file logger, falling back to console:', err.message);
+  }
+
+  // Always log to console in non-serverless dev
+  transports.push(
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.printf(({ level, message, timestamp, ...meta }) => {
+          const metaStr = Object.keys(meta).length > 1 ? ` ${JSON.stringify(meta)}` : '';
+          return `${timestamp} [${level}]: ${message}${metaStr}`;
+        })
+      )
+    })
+  );
 }
 
 const logger = winston.createLogger({
@@ -22,25 +61,7 @@ const logger = winston.createLogger({
     winston.format.json()
   ),
   defaultMeta: { service: 'macqrosa-api' },
-  transports: [
-    // Write errors to a dedicated file
-    new winston.transports.File({ filename: path.join(logDir, 'error.log'), level: 'error', maxsize: 5242880, maxFiles: 5 }),
-    // Write all logs to combined
-    new winston.transports.File({ filename: path.join(logDir, 'combined.log'), maxsize: 5242880, maxFiles: 5 }),
-  ],
+  transports: transports
 });
-
-// In development, also log to console with color
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: winston.format.combine(
-      winston.format.colorize(),
-      winston.format.printf(({ level, message, timestamp, ...meta }) => {
-        const metaStr = Object.keys(meta).length > 1 ? ` ${JSON.stringify(meta)}` : '';
-        return `${timestamp} [${level}]: ${message}${metaStr}`;
-      })
-    )
-  }));
-}
 
 export default logger;

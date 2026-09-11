@@ -10,6 +10,8 @@ interface AuthContextType {
   registerCustomer: (data: any) => Promise<{ success: boolean; error?: string }>;
   logoutCustomer: () => void;
   refreshCustomer: () => Promise<void>;
+  forgotPassword: (email: string) => Promise<{ success: boolean; message?: string; error?: string }>;
+  resetPassword: (token: string, newPassword: string) => Promise<{ success: boolean; message?: string; error?: string }>;
 
   // Admin State (Completely Isolated)
   admin: Admin | null;
@@ -137,6 +139,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const forgotPassword = async (email: string) => {
+    try {
+      const res = await fetch('/api/auth/customer/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        return { success: true, message: data.message };
+      }
+      return { success: false, error: data.error };
+    } catch (err) {
+      console.error('Forgot password error:', err);
+      return { success: false, error: 'Network error occurred' };
+    }
+  };
+
+  const resetPassword = async (token: string, newPassword: string) => {
+    try {
+      const res = await fetch('/api/auth/customer/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, newPassword })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        return { success: true, message: data.message };
+      }
+      return { success: false, error: data.error };
+    } catch (err) {
+      console.error('Reset password error:', err);
+      return { success: false, error: 'Network error occurred' };
+    }
+  };
+
   // Customer Logout
   const logoutCustomer = () => {
     localStorage.removeItem('mq_customer_token');
@@ -227,13 +265,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         registerCustomer,
         logoutCustomer,
         refreshCustomer,
+        forgotPassword,
+        resetPassword,
+        updateCustomerProfile,
 
         admin,
         adminToken,
         isAdminLoading,
         loginAdmin,
         logoutAdmin,
-        updateCustomerProfile,
         updateAdminProfile
       }}
     >

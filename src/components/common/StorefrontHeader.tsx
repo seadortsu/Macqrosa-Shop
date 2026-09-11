@@ -10,7 +10,7 @@ import { useStoreSettings } from '../../context/StoreSettingsContext';
 export const StorefrontHeader: React.FC = () => {
   const { customer } = useAuth();
   const { itemCount, subtotal, setIsCartOpen } = useCart();
-  const { themeConfig, systemAlerts } = useStoreSettings();
+  const { themeConfig, systemAlerts, menus } = useStoreSettings();
   const { resolvedTheme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -67,12 +67,20 @@ export const StorefrontHeader: React.FC = () => {
     }
   };
 
-  // Simplified nav — no categories, just primary destinations
-  const navLinks = [
-    { label: 'Shop', path: '/catalog', icon: 'storefront' },
-    { label: 'New Arrivals', path: '/catalog?sort=newest', icon: 'new_releases' },
-    { label: 'Best Sellers', path: '/catalog?sort=popular', icon: 'trending_up' },
-  ];
+  // Use dynamic menu if available, otherwise fallback
+  const mainMenu = menus['main-menu']?.items || [];
+  
+  const navLinks = mainMenu.length > 0 
+    ? mainMenu.map((item: any) => ({
+        label: item.title,
+        path: item.url,
+        icon: 'storefront' // We can expand to use icons later
+      }))
+    : [
+        { label: 'Shop', path: '/catalog', icon: 'storefront' },
+        { label: 'New Arrivals', path: '/catalog?sort=newest', icon: 'new_releases' },
+        { label: 'Best Sellers', path: '/catalog?sort=popular', icon: 'trending_up' },
+      ];
 
   return (
     <>
@@ -141,7 +149,7 @@ export const StorefrontHeader: React.FC = () => {
 
             {/* Desktop Nav — simple links, no categories */}
             <nav className="hidden lg:flex items-center gap-6">
-              {navLinks.map(link => {
+              {navLinks.map((link: any) => {
                 const isActive = location.pathname + location.search === link.path;
                 return (
                   <Link
@@ -314,7 +322,7 @@ export const StorefrontHeader: React.FC = () => {
 
             {/* Nav Links */}
             <nav className="flex-1 p-4 flex flex-col gap-1">
-              {navLinks.map(link => (
+              {navLinks.map((link: any) => (
                 <Link
                   key={link.path}
                   to={link.path}

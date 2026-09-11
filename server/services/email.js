@@ -170,3 +170,46 @@ export async function sendTemplatedEmail(htmlBody, recipientEmail, subject) {
   }
 }
 
+/**
+ * Send password reset email.
+ */
+export async function sendPasswordResetEmail(email, token) {
+  const { transporter, from, isConfigured } = await getEmailConfig();
+  if (!isConfigured) {
+    logger.warn(`SMTP not configured — falling back to console log for reset token: ${token}`);
+    console.log(`\n\n=== PASSWORD RESET LINK ===\nhttp://localhost:5173/reset-password?token=${token}\n===========================\n`);
+    return;
+  }
+
+  const resetUrl = `http://localhost:5173/reset-password?token=${token}`;
+
+  const html = `
+    <div style="font-family:'Georgia',serif;max-width:600px;margin:0 auto;color:#1a1a1a;">
+      <div style="text-align:center;padding:30px 0;border-bottom:2px solid #c9a96e;">
+        <h1 style="font-size:28px;letter-spacing:3px;color:#c9a96e;margin:0;">MACQROSA</h1>
+        <p style="color:#888;font-size:12px;letter-spacing:2px;margin-top:5px;">LUXURY ATELIER • PLACE VENDÔME</p>
+      </div>
+      <div style="padding:30px 20px;">
+        <h2 style="font-size:20px;color:#333;">Password Reset</h2>
+        <p style="color:#666;line-height:1.6;">We received a request to reset the password for your Macqrosa account.</p>
+        <p style="color:#666;line-height:1.6;">Click the button below to choose a new password. This link will expire in 1 hour.</p>
+        <div style="text-align:center;margin:30px 0;">
+          <a href="${resetUrl}" style="background-color:#1a1a1a;color:#fff;padding:12px 24px;text-decoration:none;font-size:14px;letter-spacing:1px;text-transform:uppercase;">Reset Password</a>
+        </div>
+        <p style="color:#888;font-size:12px;margin-top:30px;">If you didn't request this, you can safely ignore this email.</p>
+      </div>
+    </div>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from,
+      to: email,
+      subject: 'Macqrosa — Password Reset Request',
+      html,
+    });
+    logger.info(`Password reset email sent to ${email}`);
+  } catch (err) {
+    logger.error('Failed to send password reset email', { error: err.message, email });
+  }
+}

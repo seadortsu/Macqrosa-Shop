@@ -30,6 +30,8 @@ router.get('/', async (req, res) => {
   res.json({
     storeSettings: all.store_settings || {},
     homepageCms: all.homepage_cms || {},
+    storepageCms: all.storepage_cms || {},
+    productpageCms: all.productpage_cms || {},
     themeConfig: all.theme_config || {},
     footerConfig: all.footer_config || {},
     systemAlerts: all.system_alerts || { enabled: false }

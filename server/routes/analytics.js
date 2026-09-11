@@ -5,7 +5,7 @@ import { authenticateAdmin, authenticateSuperAdmin } from '../middleware/auth.js
 const router = Router();
 
 // All analytics require admin credentials
-router.use(authenticateAdmin, authenticateSuperAdmin);
+router.use(authenticateAdmin);
 
 router.get('/', async (req, res) => {
   try {

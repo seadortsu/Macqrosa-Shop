@@ -5,7 +5,7 @@ import { BrandLogo } from './BrandLogo';
 import { useStoreSettings } from '../../context/StoreSettingsContext';
 
 export const StorefrontFooter: React.FC = () => {
-  const { footerConfig } = useStoreSettings();
+  const { footerConfig, menus } = useStoreSettings();
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
@@ -66,13 +66,19 @@ export const StorefrontFooter: React.FC = () => {
         {/* Links Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-12 border-b border-surface-container-high/20">
           <div>
-            <h4 className="font-serif text-sm uppercase tracking-widest text-secondary-fixed mb-4">The Disciplines</h4>
+            <h4 className="font-serif text-sm uppercase tracking-widest text-secondary-fixed mb-4">
+              {menus['footer-menu']?.title || 'The Disciplines'}
+            </h4>
             <ul className="space-y-2.5 text-xs opacity-80 text-on-primary font-light">
-              <li><Link to="/catalog?category=Skincare" className="hover:text-on-primary transition-colors">Haute Skincare</Link></li>
-              <li><Link to="/catalog?category=Complexion" className="hover:text-on-primary transition-colors">Luminous Complexion</Link></li>
-              <li><Link to="/catalog?category=Lips%20%26%20Eyes" className="hover:text-on-primary transition-colors">Lips &amp; Eye Lacquers</Link></li>
-              <li><Link to="/catalog?category=Fragrance" className="hover:text-on-primary transition-colors">Extrait de Parfums</Link></li>
-              <li><Link to="/catalog?category=Gifting%20Atelier" className="hover:text-on-primary transition-colors">The Gifting Atelier</Link></li>
+              {(menus['footer-menu']?.items || [
+                { title: 'Haute Skincare', url: '/catalog?category=Skincare' },
+                { title: 'Luminous Complexion', url: '/catalog?category=Complexion' },
+                { title: 'Lips & Eye Lacquers', url: '/catalog?category=Lips%20%26%20Eyes' },
+                { title: 'Extrait de Parfums', url: '/catalog?category=Fragrance' },
+                { title: 'The Gifting Atelier', url: '/catalog?category=Gifting%20Atelier' }
+              ]).map((item: any, idx: number) => (
+                <li key={idx}><Link to={item.url} className="hover:text-on-primary transition-colors">{item.title}</Link></li>
+              ))}
             </ul>
           </div>
 

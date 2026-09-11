@@ -25,6 +25,8 @@ import settingsRoutes from './routes/settings.js';
 import promoRoutes from './routes/promos.js';
 import adminUserRoutes from './routes/adminUsers.js';
 import notificationRoutes from './routes/notifications.js';
+import menuRoutes from './routes/menus.js';
+import pageRoutes from './routes/pages.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,9 +66,9 @@ app.use(morgan('short', {
 
 // Rate limiter — Auth endpoints (stricter)
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20,
-  message: { error: 'Too many authentication attempts. Please try again after 15 minutes.' },
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 10,
+  message: { error: 'Too many authentication attempts. Please try again after 5 minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -101,6 +103,8 @@ app.use('/api/admin/promos', apiLimiter, promoRoutes);
 app.use('/api/admin/users', apiLimiter, adminUserRoutes);
 app.use('/api/admin/notifications', apiLimiter, notificationRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/menus', apiLimiter, menuRoutes);
+app.use('/api/pages', apiLimiter, pageRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -202,10 +206,12 @@ app.use((err, req, res, _next) => {
    START SERVER
    ========================================================================= */
 
-// Start server (Phusion Passenger hooks into listen(), and standalone uses PORT)
-app.listen(PORT, () => {
-  logger.info(`✨ Macqrosa API Server running on http://localhost:${PORT}`);
-});
+// Start server (Phusion Passenger hooks into listen(), standalone uses PORT, Vercel uses exported handler)
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    logger.info(`✨ Macqrosa API Server running on http://localhost:${PORT}`);
+  });
+}
 
-// Export app for Passenger entry point (app.js)
+// Export app for Vercel / Passenger entry points
 export default app;
